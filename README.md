@@ -2,11 +2,11 @@
 
 # Variance Loop
 
-### Continuous Discovery.
+**Continuous Discovery.**
 
-**A locally-run AI publishing system for turning large datasets into continuously refreshed, human-reviewed intelligence.**
+*A four-product AI publishing ecosystem — architected, built, and deployed solo.*
 
-[Live System](https://varianceloop.com) · [Terminal](https://terminal.varianceloop.com) · [News](https://news.varianceloop.com)
+[varianceloop.com](https://varianceloop.com)
 
 </div>
 
@@ -14,312 +14,185 @@
 
 <div align="center">
 
-`LOCAL AI`  ·  `AGENTIC WORKFLOWS`  ·  `HUMAN-IN-THE-LOOP`  ·  `STATIC EDGE`
+![Python](https://img.shields.io/badge/Python-3.11-000000?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-000000?style=flat-square&logo=fastapi&logoColor=white)
+![Astro](https://img.shields.io/badge/Astro-000000?style=flat-square&logo=astro&logoColor=white)
+![Ollama](https://img.shields.io/badge/Ollama-Local%20LLM-000000?style=flat-square)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-Pages-000000?style=flat-square&logo=cloudflare&logoColor=white)
 
 </div>
 
----
+<br>
 
-## What is Variance Loop?
+Variance Loop generates and continuously refreshes editorial content across four verticals — institutional markets, macro & geopolitics, film, and automotive design — using agentic AI workflows running against locally hosted models.
 
-Variance Loop is a four-product AI publishing ecosystem built to explore what happens when **large datasets, locally hosted models, agentic workflows, and editorial systems** are treated as one continuous system rather than isolated AI demos.
+It's a self-directed project, not a commercial product: built to explore current agentic AI and systems design patterns in a real, live deployment rather than a demo.
 
-The system currently spans:
+This repository holds architecture notes only. Application source lives in private repositories.
 
-| Product      | Focus                                                        |
-| ------------ | ------------------------------------------------------------ |
-| **Terminal** | Institutional markets, sentiment and capital-flow analysis   |
-| **News**     | Macro and geopolitical narrative synthesis over SEC datasets |
-| **Cinema**   | Rating variance, review quality and review-bombing analysis  |
-| **Cars**     | Automotive design analysis using visual embeddings           |
-
-The goal is simple:
-
-> **Find signals that are difficult to see when data, models, and publishing are disconnected.**
+<br>
 
 ---
 
-# Architecture
+<br>
 
-The central architectural decision is:
+## The Ecosystem
 
-> **Keep heavy computation and large datasets local. Ship only compiled output to the edge.**
+<br>
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### Terminal
+`terminal.varianceloop.com`
+
+Institutional-markets analysis comparing retail sentiment against institutional capital flow, built on aggregated SEC filings and positioning data.
+
+</td>
+<td width="50%" valign="top">
+
+### News
+`news.varianceloop.com`
+
+Macro and geopolitical synthesis over SEC Parquet datasets, surfacing structural narrative shifts.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### Cinema
+`cinema.varianceloop.com`
+
+Audits rating variance — comparing LLM-generated reviews against public rating aggregates to flag rating inflation and review-bombing.
+
+</td>
+<td width="50%" valign="top">
+
+### Cars
+`cars.varianceloop.com`
+
+Automotive design analysis using vector embeddings to score proportions, aesthetic continuity, and design language.
+
+</td>
+</tr>
+</table>
+
+<br>
+
+---
+
+<br>
+
+## Architecture
+
+<br>
+
+A single principle governs the whole system: **keep heavy compute and large datasets on local hardware, ship only compiled static output to the edge.**
 
 ```mermaid
-flowchart TD
+graph TD
+    subgraph "Local Hardware — Data & AI Engine"
+        A[(Source Data<br/>SEC Parquet · TMDB · OMDb)] --> B[DuckDB]
+        B --> C[Python — Agent State Machine]
+        D[Ollama — Local LLM<br/>Qwen · Llama Vision] --> C
+        C --> E[Streamlit — Human-in-the-Loop]
+    end
 
-    A["Source Data<br/>SEC EDGAR · TMDB · OMDb · Parquet"]
-    B["DuckDB"]
-    C["Python<br/>Agent State Machines"]
-    D["Ollama<br/>Local LLMs"]
-    E["Human Editorial Layer<br/>Streamlit"]
-    F["YAML + Markdown"]
-    G["Astro"]
-    H["Tailwind CSS"]
-    I["React"]
-    J["Pagefind"]
-    K["Cloudflare Pages"]
-    L["Browser"]
+    subgraph "Local Filesystem — Serialization"
+        E --> F[YAML Frontmatter]
+        E --> G[Markdown Content]
+    end
 
-    A --> B
-    B --> C
-    D --> C
-    C --> E
-    E --> F
-    F --> G
-    G --> H
-    G --> I
-    G --> J
-    G --> K
-    J --> K
-    K --> L
+    subgraph "Node.js — Build"
+        F & G --> H[Astro]
+        H --> I[Tailwind CSS v4]
+        H --> J[React 19]
+        H --> K[/Static Output/]
+        K --> L[Pagefind — WASM Search]
+    end
+
+    subgraph "Cloudflare — Edge"
+        K & L --> M[Cloudflare Pages]
+        M --> N[Browser]
+    end
+
+    style A fill:#f5f5f7,stroke:#1d1d1f,color:#1d1d1f
+    style D fill:#f5f5f7,stroke:#1d1d1f,color:#1d1d1f
+    style M fill:#1d1d1f,stroke:#1d1d1f,color:#ffffff
+    style N fill:#1d1d1f,stroke:#1d1d1f,color:#ffffff
 ```
 
-This separation keeps the expensive parts of the system close to the data while the public layer remains fast, cacheable, and largely static.
+Local inference avoids ongoing cloud GPU cost and keeps proprietary prompts and multi-gigabyte datasets off the network. Everything that reaches the public internet is pre-compiled static output — no live database exposure, no backend attack surface.
 
-No public application database is required to render the published experience.
-
----
-
-# The Engineering Model
-
-Variance Loop is built around a few deliberate constraints.
-
-### Local-first intelligence
-
-Large datasets and model inference remain on local hardware rather than being pushed into a hosted GPU pipeline.
-
-The AI layer uses locally hosted models through **Ollama**, with Python orchestrating data access, agent state, structured generation, and validation.
-
-### Human-in-the-loop publishing
-
-Models generate candidate material.
-
-Humans review it.
-
-Only approved material reaches the publishing layer.
-
-The system therefore treats **generation and publication as separate concerns**.
-
-### Resumable agents
-
-Long-running AI workflows are implemented as explicit state machines.
-
-A process can stop after an intermediate stage and resume rather than restarting the entire job.
-
-### Evidence before synthesis
-
-Where source data is insufficient, the system is designed to stop rather than manufacture a conclusion.
-
-That principle is particularly visible in the Cinema pipeline.
+<br>
 
 ---
 
-# Agentic Pipeline
+<br>
 
-Cinema is one of the clearest examples of the architecture.
+## Cinema — Agentic Pipeline
+
+<br>
+
+The clearest example of the pattern used across the ecosystem: a resumable, checkpointed state machine implementing an **LLM-as-a-judge** design, deliberately isolating review generation from review auditing.
 
 ```mermaid
 stateDiagram-v2
-
     [*] --> pending
-
-    pending --> ratings_fetched
-    ratings_fetched --> review_drafted
-    review_drafted --> completed
-
-    ratings_fetched --> insufficient_data
-
+    pending --> ratings_fetched: Agent 1 · Data Gathering
+    ratings_fetched --> review_drafted: Agent 2 · Editorial Critic
+    review_drafted --> completed: Agent 3 · Variance Judge
+    ratings_fetched --> insufficient_data: no public rating data
     completed --> [*]
     insufficient_data --> [*]
+
+    classDef done fill:#1d1d1f,stroke:#1d1d1f,color:#ffffff
+    class completed,insufficient_data done
 ```
 
-Three agents operate as distinct stages:
+<br>
 
-**01 — Data Gathering**
+<details>
+<summary><strong>Design details</strong></summary>
 
-Collect publicly available rating and title information.
+<br>
 
-**02 — Editorial Critic**
+- **Checkpointed after every agent.** An interrupted run resumes from the last completed state instead of redoing work.
+- **Immutable audit trail.** Every fetch and prompt execution appends to a per-title log — a transparent record of what the system did.
+- **Guardrail against hallucination.** If Agent 1 can't find enough public rating data, the pipeline halts at `insufficient_data` rather than letting the model invent a report.
+- **Blinded review generation.** Agent 2 drafts from neutral plot and cast facts only, with no visibility into public sentiment — keeping Agent 3's judgment non-circular.
 
-Generate a review from neutral plot and cast information without exposing public sentiment.
+</details>
 
-**03 — Variance Judge**
-
-Compare the generated assessment against aggregated public ratings.
-
-The important part is not the LLM itself.
-
-The important part is the **system around the LLM**:
-
-* checkpointed execution
-* explicit state transitions
-* immutable execution logs
-* insufficient-data termination
-* separation between generation and evaluation
+<br>
 
 ---
 
-# Publishing Architecture
+<br>
 
-The publishing path is intentionally boring.
+## Stack
 
-```text
-AI / Data Processing
-        ↓
-Human Review
-        ↓
-Structured Markdown
-        ↓
-Astro Build
-        ↓
-Static Output
-        ↓
-Cloudflare Edge
-```
+<br>
 
-This avoids turning every article request into a backend request.
+| | |
+|---|---|
+| **Backend / AI** | Python 3.11 · FastAPI · Ollama (local inference) · DuckDB · Pydantic · Streamlit |
+| **Frontend** | Astro · Tailwind CSS v4 · React 19 · Framer Motion · Pagefind |
+| **Data** | Postgres / pgvector · SEC EDGAR filings · Parquet |
+| **Infra** | Cloudflare Pages · Wrangler CLI · Oracle Cloud (Ampere A1) · Docker Compose |
 
-Published content can therefore be served as compiled web output while the expensive intelligence layer remains elsewhere.
+<br>
 
 ---
 
-# Four Products
-
-## Terminal
-
-**Institutional markets**
-
-Analysis of retail sentiment versus institutional capital flows using aggregated SEC filing and positioning data.
-
-[terminal.varianceloop.com](https://terminal.varianceloop.com)
-
----
-
-## News
-
-**Macro + Geopolitics**
-
-Narrative synthesis built over SEC Parquet datasets, designed to surface structural shifts hidden inside large volumes of filings and market information.
-
-[news.varianceloop.com](https://news.varianceloop.com)
-
----
-
-## Cinema
-
-**Rating variance**
-
-An agentic pipeline comparing generated critical assessments against public rating aggregates to investigate rating inflation and review-bombing patterns.
-
-[cinema.varianceloop.com](https://cinema.varianceloop.com)
-
----
-
-## Cars
-
-**Automotive design**
-
-Visual analysis using vector embeddings to evaluate proportions, aesthetic continuity, and design language.
-
-[cars.varianceloop.com](https://cars.varianceloop.com)
-
----
-
-# Stack
-
-### AI / Backend
-
-`Python 3.11` · `FastAPI` · `Ollama` · `DuckDB` · `Pydantic` · `Streamlit`
-
-### Frontend
-
-`Astro` · `Tailwind CSS` · `React` · `Framer Motion` · `Pagefind`
-
-### Data
-
-`Postgres` · `pgvector` · `SEC EDGAR` · `Parquet`
-
-### Infrastructure
-
-`Cloudflare Pages` · `Wrangler` · `Docker` · `Oracle Cloud`
-
----
-
-# Why Local AI?
-
-The interesting constraint is not simply running an LLM locally.
-
-It is designing the entire system around that constraint.
-
-Large source datasets stay close to computation.
-
-Prompts and proprietary orchestration remain local.
-
-The public network receives compiled output instead of becoming part of the core intelligence pipeline.
-
-That changes the architecture from:
-
-```text
-User → API → Database → GPU → LLM → Response
-```
-
-to:
-
-```text
-Data → Local Intelligence → Human Review → Build → Edge
-```
-
-For publishing-oriented systems, that distinction is significant.
-
----
-
-# What This Repository Is
-
-This public repository is the **architectural and systems showcase** for Variance Loop.
-
-Production application source, private prompts, internal datasets, credentials, deployment configuration, and operational tooling remain in private repositories.
-
-The public project exists to make the engineering decisions inspectable without exposing the private implementation.
-
----
-
-# Design Philosophy
-
-### Compute locally.
-
-Move data, not unnecessary infrastructure.
-
-### Make AI workflows explicit.
-
-Prefer state machines over opaque chains of model calls.
-
-### Keep humans in the loop.
-
-Generation is not publication.
-
-### Fail closed on missing evidence.
-
-Insufficient data should terminate a workflow rather than produce synthetic certainty.
-
-### Compile where possible.
-
-The public web should not carry infrastructure that does not need to be there.
-
-### Keep the system understandable.
-
-Every architectural component should justify its existence.
-
----
+<br>
 
 <div align="center">
 
-## Variance Loop
+Application source is private. Happy to walk through it directly as part of a hiring conversation.
 
-**Continuous Discovery.**
-
-[varianceloop.com](https://varianceloop.com)
-
-Built as an independent exploration of AI systems, data infrastructure, editorial workflows, and edge publishing.
+[varianceloop.com](https://varianceloop.com) · [github.com/Savanand](https://github.com/Savanand)
 
 </div>
